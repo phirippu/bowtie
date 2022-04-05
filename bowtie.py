@@ -91,7 +91,7 @@ def generate_exppowlaw_spectra(energy_grid_dict,
                                cutoff_energy = 1.0):
     """
     The function generates exponentially cut off power-law spectra in a given range of indices.
-    The exponential cutoff is applied by the formula dJ/dE = E^(-gamma) * exp( - E0 / E - E0); E > E0
+    The exponential cutoff is applied by the formula dJ/dE = E^(gamma) * exp( - E0 / (E - E0)); E > E0
     :param energy_grid_dict: A dictionary, must have 'midpt' (a numpy array)
     :type energy_grid_dict: the energy_grid_data (dictionary, see make_energy_grid),
     :param gamma_pow_min: The lower limit for power-law index
@@ -177,9 +177,12 @@ def calculate_bowtie_gf(response_data,
                         emin = 0.01, emax = 1000,
                         gamma_index_steps = 100,
                         use_integral_bowtie = False,
-                        sigma = 3):
+                        sigma = 3,
+                        return_gf_stddev = False):
     """
     Calculates the bowtie geometric factor for a single channel
+    :param return_gf_stddev: True if the margin of the channel geometric factor is requested.
+    :type return_gf_stddev: bool
     :param response_data: The response data for the channel.
     :type response_data: A dictionary, must have 'grid', the energy_grid_data (dictionary, see make_energy_grid),
                          and 'resp', the channel response (an array of a length of energy_grid_data['nstep'])
@@ -193,9 +196,9 @@ def calculate_bowtie_gf(response_data,
     :type gamma_index_steps:
     :param use_integral_bowtie:
     :type use_integral_bowtie:
-    :param sigma:
-    :type sigma:
-    :return: (The geometric factor, the effective energy, lower margin for the effective energy, upper margin for the effective energy)
+    :param sigma: Cutoff sigma value for the energy margin.
+    :type sigma: float
+    :return: (The geometric factor, [the standard dev of GF], the effective energy, lower margin for the effective energy, upper margin for the effective energy)
     :rtype: list
     """
     energy_grid_local = response_data['grid']['midpt']
@@ -223,15 +226,15 @@ def calculate_bowtie_gf(response_data,
     non_zero_gf = np.mean(multi_geometric_factors, axis = 0) > 0
     multi_geometric_factors_usable = multi_geometric_factors[:, non_zero_gf]
     means = np.exp(np.mean(np.log(multi_geometric_factors_usable), axis = 0))  # logarithmic mean
-    gf_stddev_all = np.std(multi_geometric_factors_usable, axis = 0) / means
-    gf_stddev_all /= np.min(gf_stddev_all)
-    bowtie_cross_index = np.argmin(gf_stddev_all)  # The minimal standard deviation point - bowtie crossing point.
+    gf_stddev = np.std(multi_geometric_factors_usable, axis = 0) / means
+    gf_stddev_norm = gf_stddev / np.min(gf_stddev)
+    bowtie_cross_index = np.argmin(gf_stddev_norm)  # The minimal standard deviation point - bowtie crossing point.
     
     # Interpolate the discrete standard deviation so that it could be used in a equation solver.
     # The discrete standard deviation is normalized to 1 in the minimum, so that 1.0 must be subtracted
     # before sigma level to make a discrete "equation" for the the interpolator because
     # the optimize.bisect looks for zeroes of a function, which is the interpolator.
-    stddev_interpolator = interpolate.interp1d(energy_grid_local[non_zero_gf], gf_stddev_all - 1.0 - sigma)
+    stddev_interpolator = interpolate.interp1d(energy_grid_local[non_zero_gf], gf_stddev_norm - 1.0 - sigma)
     try:
         (channel_energy_low) = optimize.bisect(stddev_interpolator,
                                                energy_grid_local[non_zero_gf][0],
@@ -251,6 +254,8 @@ def calculate_bowtie_gf(response_data,
     
     gf_cross = geometric_mean(multi_geometric_factors_usable[:, bowtie_cross_index])
     energy_cross = energy_grid_local[bowtie_cross_index]
+    if return_gf_stddev:
+        return gf_cross, gf_stddev[bowtie_cross_index], energy_cross, channel_energy_low, channel_energy_high
     
     return gf_cross, energy_cross, channel_energy_low, channel_energy_high
 

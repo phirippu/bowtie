@@ -8,7 +8,7 @@ import bowtie
 
 def main(use_integral_bowtie = False,
          particle = 'e'):
-    base_path = "..."  # adjust to your path
+    base_path = "/home/phil/dione/Geant4/"  # adjust to your path
     channels_per_decade = 256
     gamma_min = -3.5
     gamma_max = -1.5
@@ -66,7 +66,8 @@ def main(use_integral_bowtie = False,
             'resp': resp_cache,  # channel response
         })
     
-    power_law_spectra = bowtie.generate_pwlaw_spectra(energy_grid, gamma_min, gamma_max, gamma_steps)
+    # power_law_spectra = bowtie.generate_pwlaw_spectra(energy_grid, gamma_min, gamma_max, gamma_steps)
+    power_law_spectra = bowtie.generate_exppowlaw_spectra(energy_grid, gamma_min, gamma_max, gamma_steps, cutoff_energy = 0.2)
     gf_to_print = np.zeros(len(response_matrix))
     eff_energies_to_print = np.zeros(len(response_matrix))
     

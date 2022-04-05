@@ -78,7 +78,10 @@ def gf_test(use_integral_bowtie = False, gamma_min = -3.5, gamma_max = -1.5,
 
 if __name__ == "__main__":
     gf_test(use_integral_bowtie = False,
-            powerlaw = False,
-            plotspectrum = False,
-            cutoff_energy = 1.5)
+            powerlaw = True,
+            plotspectrum = True,
+            cutoff_energy = 1.5,
+            gamma_max = -1.5,
+            gamma_min = -3.5,
+            channels_per_decade = 256)
     # cProfile.run('gf_test(use_integral_bowtie = True)', sort = 'time')
