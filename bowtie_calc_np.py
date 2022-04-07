@@ -19,20 +19,17 @@ def main(use_integral_bowtie = False,
     if particle == 'e':
         instrument_channels = 7
         channel_start = 1
-        channel_stop = 8
         # For contamination studies
         # instrument_channels = 3
         # channel_start = 8
-        # channel_stop = 8 + 3
     else:
         instrument_channels = 9
         channel_start = 8
-        channel_stop = 8 + 9
         # For contamination studies
         # instrument_channels = 7
         # channel_start = 1
-        # channel_stop = 8
     
+    channel_stop = channel_start + instrument_channels
     #        y = particles_response[:, chdraw, 2] / (particles_shot / radiation_area + 1E-24) * const.pi
     data_file_name = base_path + \
                      '/Results/SIXS/array_vault_{1:s}_{0:d}.npz'.format(channels_per_decade, particle)
